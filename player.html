@@ -5,28 +5,68 @@
 <title>あなたの役職</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-body { font-family: sans-serif; text-align: center; padding: 20px; }
-select, button { margin: 10px; padding: 8px; font-size: 16px; }
-#result { font-size: 24px; margin-top: 20px; font-weight: bold; }
+body {
+  font-family: sans-serif;
+  text-align: center;
+  padding: 20px;
+}
+
+select, button {
+  margin: 10px;
+  padding: 10px;
+  font-size: 16px;
+}
+
+#result {
+  font-size: 26px;
+  margin-top: 20px;
+  font-weight: bold;
+}
+
+#sub {
+  font-size: 18px;
+  margin-top: 10px;
+  color: #1565c0;
+}
 </style>
 </head>
 <body>
 
 <h1>役職確認</h1>
 
+<div id="error" style="color:red;"></div>
+
 <select id="name"></select><br>
-<button onclick="showRole()">役職を見る</button>
+
+<button 
+  onmousedown="showRole()" 
+  onmouseup="hideRole()" 
+  onmouseleave="hideRole()"
+>
+押している間だけ表示
+</button>
 
 <div id="result"></div>
+<div id="sub"></div>
 
 <script>
-// URL取得
+// ===== URL取得 =====
 const params = new URLSearchParams(location.search);
 const seedText = params.get("seed");
-const names = params.get("names").split(",");
+const namesParam = params.get("names");
 const count = Number(params.get("count"));
 
-// 名前セット
+const errorEl = document.getElementById("error");
+
+// ===== エラーチェック =====
+if (!seedText || !namesParam || !count) {
+  errorEl.textContent = "URLが不正です（GMから再取得してください）";
+}
+
+// 名前配列
+const names = namesParam ? namesParam.split(",") : [];
+
+// セレクト生成
 const select = document.getElementById("name");
 names.forEach(n => {
   const option = document.createElement("option");
@@ -35,7 +75,7 @@ names.forEach(n => {
   select.appendChild(option);
 });
 
-// シード乱数
+// ===== シード乱数 =====
 function seededRandom(seed) {
   let t = seed;
   return function() {
@@ -46,17 +86,33 @@ function seededRandom(seed) {
   };
 }
 
+// ===== 役職構成（安定進行）=====
+const roleConfig = {
+  5: ["村人","村人","村人","占い師","人狼"],
+  6: ["村人","村人","村人","村人","占い師","人狼"],
+  7: ["村人","村人","村人","村人","占い師","人狼","狂人"],
+  8: ["村人","村人","村人","村人","占い師","霊能者","人狼","人狼"],
+  9: ["村人","村人","村人","村人","占い師","霊能者","人狼","人狼","狂人"],
+  10:["村人","村人","村人","村人","村人","占い師","霊能者","人狼","人狼","狂人"],
+  11:["村人","村人","村人","村人","村人","占い師","霊能者","狩人","人狼","人狼","狂人"],
+  12:["村人","村人","村人","村人","村人","村人","占い師","霊能者","狩人","人狼","人狼","狂人"],
+  13:["村人","村人","村人","村人","村人","村人","占い師","霊能者","狩人","人狼","人狼","人狼","狂人"]
+};
+
+// ===== 表示処理 =====
 function showRole() {
+  if (!roleConfig[count]) {
+    errorEl.textContent = "この人数には対応していません";
+    return;
+  }
+
   let seed = 0;
   for (let c of seedText) seed += c.charCodeAt(0);
   const rand = seededRandom(seed);
 
-  // 役職生成（GMと同じ）
-  const roles = [];
-  roles.push("人狼");
-  roles.push("占い師");
-  while (roles.length < count) roles.push("村人");
+  let roles = [...roleConfig[count]];
 
+  // シャッフル
   for (let i = roles.length - 1; i > 0; i--) {
     const j = Math.floor(rand() * (i + 1));
     [roles[i], roles[j]] = [roles[j], roles[i]];
@@ -64,11 +120,33 @@ function showRole() {
 
   const myName = select.value;
   const index = names.indexOf(myName);
-
   const role = roles[index];
 
-  document.getElementById("result").textContent =
-    `${myName} の役職は「${role}」です`;
+  const resultEl = document.getElementById("result");
+  const subEl = document.getElementById("sub");
+
+  resultEl.textContent = `あなたの役職は「${role}」です`;
+  subEl.textContent = "";
+
+  // ===== 人狼同士の認識 =====
+  if (role === "人狼") {
+    const wolves = [];
+    roles.forEach((r, i) => {
+      if (r === "人狼" && i !== index) {
+        wolves.push(names[i]);
+      }
+    });
+
+    if (wolves.length > 0) {
+      subEl.textContent = `仲間：${wolves.join("、")}`;
+    }
+  }
+}
+
+// ===== 非表示 =====
+function hideRole() {
+  document.getElementById("result").textContent = "";
+  document.getElementById("sub").textContent = "";
 }
 </script>
 
