@@ -1,1 +1,76 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>あなたの役職</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body { font-family: sans-serif; text-align: center; padding: 20px; }
+select, button { margin: 10px; padding: 8px; font-size: 16px; }
+#result { font-size: 24px; margin-top: 20px; font-weight: bold; }
+</style>
+</head>
+<body>
 
+<h1>役職確認</h1>
+
+<select id="name"></select><br>
+<button onclick="showRole()">役職を見る</button>
+
+<div id="result"></div>
+
+<script>
+// URL取得
+const params = new URLSearchParams(location.search);
+const seedText = params.get("seed");
+const names = params.get("names").split(",");
+const count = Number(params.get("count"));
+
+// 名前セット
+const select = document.getElementById("name");
+names.forEach(n => {
+  const option = document.createElement("option");
+  option.value = n;
+  option.textContent = n;
+  select.appendChild(option);
+});
+
+// シード乱数
+function seededRandom(seed) {
+  let t = seed;
+  return function() {
+    t += 0x6D2B79F5;
+    let r = Math.imul(t ^ t >>> 15, 1 | t);
+    r ^= r + Math.imul(r ^ r >>> 7, 61 | r);
+    return ((r ^ r >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+function showRole() {
+  let seed = 0;
+  for (let c of seedText) seed += c.charCodeAt(0);
+  const rand = seededRandom(seed);
+
+  // 役職生成（GMと同じ）
+  const roles = [];
+  roles.push("人狼");
+  roles.push("占い師");
+  while (roles.length < count) roles.push("村人");
+
+  for (let i = roles.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [roles[i], roles[j]] = [roles[j], roles[i]];
+  }
+
+  const myName = select.value;
+  const index = names.indexOf(myName);
+
+  const role = roles[index];
+
+  document.getElementById("result").textContent =
+    `${myName} の役職は「${role}」です`;
+}
+</script>
+
+</body>
+</html>
