@@ -78,7 +78,16 @@ function generate() {
     alert("名前が重複しています");
     return;
   }
+  
+　if (!seedText) {
+  alert("シード値を入力してください");
+  return;
+　}
 
+  if (!seedText) {
+  alert("シード値を入力してください");
+  return;
+　}
   // ===== シード生成 =====
   let seed = 0;
   for (let c of seedText) seed += c.charCodeAt(0);
