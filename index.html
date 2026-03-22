@@ -63,41 +63,59 @@ function generate() {
 
   const names = Array.from(inputs).map(i => i.value.trim());
 
-  // チェック
+  // ===== 入力チェック =====
+  if (count < 5) {
+    alert("5人以上でプレイしてください");
+    return;
+  }
+
   if (names.includes("")) {
     alert("名前をすべて入力してください");
     return;
   }
+
   if (new Set(names).size !== names.length) {
     alert("名前が重複しています");
     return;
   }
 
-  // シード生成
+  // ===== シード生成 =====
   let seed = 0;
   for (let c of seedText) seed += c.charCodeAt(0);
   const rand = seededRandom(seed);
 
-  // 役職作成
-  const roles = [];
-  roles.push("人狼");
-  roles.push("占い師");
-  while (roles.length < count) roles.push("村人");
+  // ===== 役職構成 =====
+  const roleConfig = {
+    5: ["村人","村人","村人","占い師","人狼"],
+    6: ["村人","村人","村人","村人","占い師","人狼"],
+    7: ["村人","村人","村人","村人","占い師","人狼","狂人"],
+    8: ["村人","村人","村人","村人","村人","占い師","人狼","人狼"],
+    9: ["村人","村人","村人","村人","占い師","霊能者","人狼","人狼","狂人"],
+    10:["村人","村人","村人","村人","村人","占い師","霊能者","人狼","人狼","狂人"],
+    11:["村人","村人","村人","村人","村人","占い師","霊能者","狩人","人狼","人狼","狂人"],
+    12:["村人","村人","村人","村人","村人","村人","占い師","霊能者","狩人","人狼","人狼","狂人"],
+    13:["村人","村人","村人","村人","村人","村人","占い師","霊能者","狩人","人狼","人狼","人狼","狂人"]
+  };
 
-  // シャッフル
+  let roles = roleConfig[count];
+
+  // 念のためコピー（参照バグ防止）
+  roles = [...roles];
+
+  // ===== シャッフル =====
   for (let i = roles.length - 1; i > 0; i--) {
     const j = Math.floor(rand() * (i + 1));
     [roles[i], roles[j]] = [roles[j], roles[i]];
   }
 
-  // 表示
+  // ===== 表示 =====
   const result = document.getElementById("result");
   result.innerHTML = "";
   for (let i = 0; i < count; i++) {
     result.innerHTML += `${names[i]} → ${roles[i]}<br>`;
   }
 
-  // URL生成
+  // ===== URL生成 =====
   const params = new URLSearchParams();
   params.set("seed", seedText);
   params.set("names", names.join(","));
@@ -106,7 +124,9 @@ function generate() {
   const url = location.origin + location.pathname.replace("index.html","") + "player.html?" + params.toString();
 
   document.getElementById("url").value = url;
-}
+} 
+
+
 </script>
 
 </body>
